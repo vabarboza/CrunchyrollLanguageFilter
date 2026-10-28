@@ -1,7 +1,8 @@
+
 {
     "manifest_version": 3,
     "name": "Crunchyroll Filter",
-    "version": "1.0",
+    "version": "1.1.0",
     "description": "Hide releases of selected languages on the Crunchyroll calendar.",
     "permissions": [
         "storage"
@@ -31,6 +32,7 @@
     "content_scripts": [
         {
             "matches": [
+                "https://www.crunchyroll.com/pt-br/releasecalendar*",
                 "https://www.crunchyroll.com/pt-br/simulcastcalendar*"
             ],
             "js": [
