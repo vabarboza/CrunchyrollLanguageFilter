@@ -1,129 +1,77 @@
-
-const IDIOMAS_PADRAO = ["DE"];
-
-const NOMES_PARA_CODIGOS = {
-    "Deutsch": "DE",
-    "English": "EN",
-    "Español": "ES",
-    "हिंदी": "HI",
-    "தமிழ்": "TA",
-    "العربية": "AR",
-    "América Latina": "ES",
-    "Português (Brasil)": "PT",
-    "Français": "FR",
-    "Italiano": "IT",
-    "తెలుగు": "TE",
-    "Bahasa Indonesia": "ID",
-    "ไทย": "TH",
-    "普通话": "ZH",
-    "Polski": "PL",
-    "한국어": "KO"
+const LANGUAGE_CODES = {
+    "Deutsch": ["DE"],
+    "English": ["EN"],
+    "Español": ["ES"],
+    "हिंदी": ["HI"],
+    "தமிழ்": ["TA"],
+    "العربية": ["AR"],
+    "América Latina": ["ES"],
+    "Português (Brasil)": ["PT"],
+    "Français": ["FR"],
+    "Italiano": ["IT"],
+    "తెలుగు": ["TE"],
+    "Bahasa Indonesia": ["ID"],
+    "ไทย": ["TH"],
+    "普通话": ["ZH", "ZH-CN", "ZH_CN"],
+    "Polski": ["PL"],
+    "한국어": ["KO"]
 };
 
-let idiomasOcultos = IDIOMAS_PADRAO;
+let hiddenLanguageCodes = ["DE"];
 
-function encontrarCartao(link) {
-    let elemento = link.parentElement;
-
-    // Procura o contêiner do cartão sem ocultar a página inteira.
-    for (let i = 0; elemento && i < 7; i++) {
-        const classe = typeof elemento.className === "string"
-            ? elemento.className
-            : "";
-
-        if (
-            classe.includes("release-calendar-card") &&
-            !classe.includes("__link")
-        ) {
-            return elemento;
-        }
-
-        elemento = elemento.parentElement;
-    }
-
-    // Alternativa: oculta apenas o link, caso não encontre o cartão.
-    return link;
+function getCodesFromSelectedNames(names) {
+    return names.flatMap((name) => LANGUAGE_CODES[name] || [String(name).toUpperCase()]);
 }
 
-function filtrarCartoes() {
-    document.querySelectorAll(
-        'a[data-t="watch-page-link"]'
-    ).forEach(link => {
-        const texto = link.querySelector(
-            'span[data-t="sr-only"]'
-        )?.textContent || "";
-
-        const match = texto.match(
-            /Idiomas de áudio:\s*(.*?)(?:,\s*Lançamento\b|$)/i
-        );
-
+function filterReleaseCards() {
+    document.querySelectorAll('a[data-t="watch-page-link"]').forEach((link) => {
+        const text = link.querySelector('span[data-t="sr-only"]')?.textContent || "";
+        const match = text.match(/Idiomas de áudio:\s*(.*?)(?:,\s*Lançamento\b|$)/i)
+            || text.match(/Audio languages:\s*(.*?)(?:,\s*Release\b|$)/i);
         if (!match) return;
 
-        const codigos = match[1]
+        const codes = match[1]
             .split(",")
-            .map(codigo => codigo.trim().toUpperCase())
+            .map((code) => code.trim().toUpperCase())
             .filter(Boolean);
 
-        const temPortugues = codigos.includes("PT");
+        // Preserve any title that includes Portuguese audio, regardless of other selected languages.
+        const hasPortuguese = codes.includes("PT");
+        const shouldHide = !hasPortuguese && hiddenLanguageCodes.some((code) => codes.includes(code));
 
-        const deveOcultar = !temPortugues && idiomasOcultos.some(
-            codigo => codigos.includes(codigo)
-        );
-
-        const celula = link.closest('[data-t="release-cell"]');
-
-        if (celula) {
-            celula.hidden = deveOcultar;
+        const cell = link.closest('[data-t="release-cell"]');
+        if (cell) {
+            cell.hidden = shouldHide;
         } else {
-            const cartao = link.closest(
-                '[data-t="release-calendar-card"]'
-            );
-
-            if (cartao) {
-                cartao.hidden = deveOcultar;
-            }
+            const card = link.closest('[data-t="release-calendar-card"]');
+            if (card) card.hidden = shouldHide;
         }
     });
 }
 
-function carregarConfiguracao() {
-    chrome.storage.sync.get(
-        { hiddenLanguages: ["Deutsch"] },
-        dados => {
-            idiomasOcultos = dados.hiddenLanguages.map(
-                nome => NOMES_PARA_CODIGOS[nome] || nome.toUpperCase()
-            );
-
-            filtrarCartoes();
-        }
-    );
+function loadFilterSettings() {
+    chrome.storage.sync.get({ hiddenLanguages: ["Deutsch"] }, (data) => {
+        const selectedNames = Array.isArray(data.hiddenLanguages) ? data.hiddenLanguages : ["Deutsch"];
+        hiddenLanguageCodes = getCodesFromSelectedNames(selectedNames);
+        filterReleaseCards();
+    });
 }
 
-carregarConfiguracao();
+loadFilterSettings();
 
-let agendado = false;
-
+let scheduled = false;
 const observer = new MutationObserver(() => {
-    if (agendado) return;
-
-    agendado = true;
-
+    if (scheduled) return;
+    scheduled = true;
     requestAnimationFrame(() => {
-        agendado = false;
-        filtrarCartoes();
+        scheduled = false;
+        filterReleaseCards();
     });
 });
+observer.observe(document.body, { childList: true, subtree: true, characterData: true });
 
-observer.observe(document.body, {
-    childList: true,
-    subtree: true,
-    characterData: true
-});
-
-chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === "sync" && changes.hiddenLanguages) {
-        carregarConfiguracao();
+chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName === "sync" && changes.hiddenLanguages) {
+        loadFilterSettings();
     }
 });
-
-

@@ -1,8 +1,1 @@
-chrome.runtime.onInstalled.addListener(() => {
-    chrome.storage.sync.set({
-        hiddenLanguages: [
-            "Deutsch",
-            "América Latina"
-        ]
-    });
-});
+// Background service worker reserved for future extension features.

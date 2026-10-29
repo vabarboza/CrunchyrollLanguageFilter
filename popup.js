@@ -1,38 +1,42 @@
 const checkboxes = document.querySelectorAll('input[type="checkbox"]');
 
-// Load saved settings
-chrome.storage.sync.get("hiddenLanguages", (data) => {
-    const languages = data.hiddenLanguages || [];
-    checkboxes.forEach(cb => {
-        cb.checked = languages.includes(cb.value);
+function applyTranslations() {
+    document.querySelectorAll("[data-i18n]").forEach((element) => {
+        const key = element.getAttribute("data-i18n");
+        const message = chrome.i18n.getMessage(key);
+        if (message) element.textContent = message;
     });
-});
+    document.documentElement.lang = chrome.i18n.getUILanguage().replace("_", "-");
+}
 
-// Save settings
-document.getElementById("save").addEventListener("click", () => {
-    const selected = [];
-    checkboxes.forEach(cb => {
-        if (cb.checked) {
-            selected.push(cb.value);
-        }
+function loadSettings() {
+    chrome.storage.sync.get({ hiddenLanguages: [] }, (data) => {
+        const languages = Array.isArray(data.hiddenLanguages) ? data.hiddenLanguages : [];
+        checkboxes.forEach((checkbox) => {
+            checkbox.checked = languages.includes(checkbox.value);
+        });
+    });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    applyTranslations();
+    loadSettings();
+
+    document.getElementById("save").addEventListener("click", () => {
+        const selected = Array.from(checkboxes)
+            .filter((checkbox) => checkbox.checked)
+            .map((checkbox) => checkbox.value);
+
+        chrome.storage.sync.set({ hiddenLanguages: selected }, () => {
+            window.close();
+        });
     });
 
-    chrome.storage.sync.set({
-        hiddenLanguages: selected
+    document.getElementById("select-all").addEventListener("click", () => {
+        checkboxes.forEach((checkbox) => { checkbox.checked = true; });
     });
 
-    window.close();
-});
-
-// Select All / Deselect All functionality
-document.getElementById("select-all").addEventListener("click", () => {
-    checkboxes.forEach(cb => {
-        cb.checked = true;
-    });
-});
-
-document.getElementById("clear-all").addEventListener("click", () => {
-    checkboxes.forEach(cb => {
-        cb.checked = false;
+    document.getElementById("clear-all").addEventListener("click", () => {
+        checkboxes.forEach((checkbox) => { checkbox.checked = false; });
     });
 });

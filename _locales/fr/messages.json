@@ -1,0 +1,20 @@
+{
+  "extensionName": {
+    "message": "Filtre audio Crunchyroll"
+  },
+  "extensionDescription": {
+    "message": "Filtre les sorties du calendrier Crunchyroll selon les langues audio sélectionnées."
+  },
+  "popupSubtitle": {
+    "message": "Sélectionnez les langues à masquer"
+  },
+  "hideAll": {
+    "message": "Tout masquer"
+  },
+  "showAll": {
+    "message": "Tout afficher"
+  },
+  "saveChanges": {
+    "message": "Enregistrer"
+  }
+}

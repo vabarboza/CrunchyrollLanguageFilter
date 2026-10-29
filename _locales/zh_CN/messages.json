@@ -1,0 +1,20 @@
+{
+  "extensionName": {
+    "message": "Crunchyroll 音频筛选器"
+  },
+  "extensionDescription": {
+    "message": "根据所选音频语言筛选 Crunchyroll 发布日历中的条目。"
+  },
+  "popupSubtitle": {
+    "message": "选择要隐藏的语言"
+  },
+  "hideAll": {
+    "message": "全部隐藏"
+  },
+  "showAll": {
+    "message": "全部显示"
+  },
+  "saveChanges": {
+    "message": "保存更改"
+  }
+}
